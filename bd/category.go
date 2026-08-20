@@ -94,6 +94,7 @@ func DeleteCategory(id int) error {
 	fmt.Println("Delete Category > Ejecución Exitosa")
 	return nil
 }
+
 func SelectCategories(CategId int, Slug string) ([]models.Category, error) {
 	fmt.Println("Comienza SelectCategories")
 

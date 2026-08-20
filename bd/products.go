@@ -38,6 +38,25 @@ func InsertProduct(p models.Product) (int64,error) {
 	if len(p.ProdPath) > 0 {
 		sentencia += ", Prod_Path"
 	}
+	if p.ProdSellOnlyUnit == 0 || p.ProdSellOnlyUnit == 1 {
+		sentencia += ", Prod_Sell_Only_Unit"
+
+		if p.ProdSellOnlyUnit == 0 {
+			if p.ProdPriceBox > 0 {
+				sentencia += ", Prod_Price_Box"
+			}
+			if p.ProdUnitsPerBox > 0 {
+				sentencia += ", Prod_Units_Per_Box"
+			}
+			if p.ProdWholesaleMinQty > 0 {
+				sentencia += ", Prod_Wholesale_Min_Qty"
+			}
+			if p.ProdPriceBox > 0 && p.ProdUnitsPerBox > 0{
+				sentencia += ", Prod_Price_Wholesale_Unit"
+			}
+		}
+
+	}
 
 	sentencia += ") VALUES ('" + tools.EscapeString(p.ProdTitle) + "'"
 
@@ -55,6 +74,26 @@ func InsertProduct(p models.Product) (int64,error) {
 	}
 	if len(p.ProdPath) > 0 {
 		sentencia += ", '" + tools.EscapeString(p.ProdPath) + "'"
+	}
+	if p.ProdSellOnlyUnit == 0 || p.ProdSellOnlyUnit == 1 {
+		sentencia += ", " + strconv.Itoa(p.ProdSellOnlyUnit)
+
+		if p.ProdSellOnlyUnit == 0 {
+			if p.ProdPriceBox > 0 {
+				sentencia += ", " + strconv.FormatFloat(p.ProdPriceBox, 'e', -1, 64)
+			}
+			if p.ProdUnitsPerBox > 0 {
+				sentencia += ", " + strconv.Itoa(p.ProdUnitsPerBox)
+			}
+			if p.ProdWholesaleMinQty > 0 {
+				sentencia += ", " + strconv.Itoa(p.ProdWholesaleMinQty)
+			}
+			if p.ProdPriceBox > 0 && p.ProdUnitsPerBox > 0{
+			priceWholesaleUnit := p.ProdPriceBox / float64(p.ProdUnitsPerBox)
+				sentencia += ", " + strconv.FormatFloat(priceWholesaleUnit, 'e', -1, 64)
+			}
+		}
+
 	}
 
 	sentencia += ")"
