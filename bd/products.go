@@ -131,7 +131,15 @@ func UpdateProduct(p models.Product) error {
 	sentencia = tools.ArmoSentencia(sentencia, "Prod_CategoryId", "N", p.ProdCategId, 0, "")
 	sentencia = tools.ArmoSentencia(sentencia, "Prod_Stock", "N", p.ProdStock, 0, "")
 	sentencia = tools.ArmoSentencia(sentencia, "Prod_Path", "S", 0, 0, p.ProdPath)
-
+	sentencia = tools.ArmoSentencia(sentencia, "Prod_Sell_Only_Unit", "N", p.ProdSellOnlyUnit, 0, "")
+	sentencia = tools.ArmoSentencia(sentencia, "Prod_Price_Box", "F", 0, p.ProdPriceBox, "")
+	sentencia = tools.ArmoSentencia(sentencia, "Prod_Units_Per_Box", "N", p.ProdUnitsPerBox, 0, "")
+	sentencia = tools.ArmoSentencia(sentencia, "Prod_Wholesale_Min_Qty", "N", p.ProdWholesaleMinQty, 0, "")
+	if p.ProdPriceBox > 0 && p.ProdUnitsPerBox > 0{
+		priceWholesaleUnit := p.ProdPriceBox / float64(p.ProdUnitsPerBox)
+		sentencia = tools.ArmoSentencia(sentencia, "Prod_Price_Wholesale_Unit", "F", 0, priceWholesaleUnit, "")
+	}
+	
 	sentencia += " WHERE Prod_id = " + strconv.Itoa(p.ProdId)
 
 	_, err = Db.Exec(sentencia)
