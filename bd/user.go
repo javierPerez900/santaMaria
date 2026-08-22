@@ -57,6 +57,7 @@ func SelectUser(UserId string) (models.User, error) {
 
 	var rows *sql.Rows
 	rows, err = Db.Query(sentencia)
+	
 	if err != nil {
 		fmt.Println(err.Error())
 		return User, err
