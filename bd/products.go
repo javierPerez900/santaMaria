@@ -189,7 +189,7 @@ func SelectProduct(p models.Product, choice string, page int, pageSize int, orde
 	var sentenciaCount string
 	var where, limit string
 
-	sentencia = "SELECT Prod_Id, Prod_Title, Prod_Description, Prod_CreatedAt, Prod_Updated, Prod_Price, Prod_Path, Prod_CategoryId, Prod_Stock FROM products"
+	sentencia = "SELECT Prod_Id, Prod_Title, Prod_Description, Prod_CreatedAt, Prod_Updated, Prod_Price, Prod_Price_Box, Prod_Units_Per_Box, Prod_Wholesale_Min_Qty, Prod_Price_Wholesale_Unit, Prod_Sell_Only_Unit, Prod_Path, Prod_CategoryId, Prod_Stock FROM products"
 	sentenciaCount = "SELECT count(*) as registros FROM products"
 
 	switch choice {
@@ -279,11 +279,16 @@ func SelectProduct(p models.Product, choice string, page int, pageSize int, orde
 		var ProdCreatedAt sql.NullTime
 		var ProdUpdated sql.NullTime
 		var ProdPrice sql.NullFloat64
+		var ProdPriceBox sql.NullFloat64
+		var ProdUnitsPerBox sql.NullInt32
+		var ProdWholesaleMinQty  sql.NullInt32
+		var ProdPriceWholesaleUnit sql.NullFloat64
+		var ProdSellOnlyUnit sql.NullInt32
 		var ProdPath sql.NullString
 		var ProdCategoryId sql.NullInt32
 		var ProdStock sql.NullInt32
 	
-		err := rows.Scan(&ProdId, &ProdTitle, &ProdDescription, &ProdCreatedAt, &ProdUpdated, &ProdPrice, &ProdPath, &ProdCategoryId, &ProdStock)
+		err := rows.Scan(&ProdId, &ProdTitle, &ProdDescription, &ProdCreatedAt, &ProdUpdated, &ProdPrice, &ProdPriceBox, &ProdUnitsPerBox, &ProdWholesaleMinQty, &ProdPriceWholesaleUnit, &ProdSellOnlyUnit, &ProdPath, &ProdCategoryId, &ProdStock)
 		if err != nil {
 			return Resp, err
 		}
@@ -294,6 +299,11 @@ func SelectProduct(p models.Product, choice string, page int, pageSize int, orde
 		p.ProdCreatedAt = ProdCreatedAt.Time.String()
 		p.ProdUpdated = ProdUpdated.Time.String()
 		p.ProdPrice = ProdPrice.Float64
+		p.ProdPriceBox = ProdPriceBox.Float64
+		p.ProdUnitsPerBox = int(ProdUnitsPerBox.Int32)
+		p.ProdWholesaleMinQty = int(ProdWholesaleMinQty.Int32)
+		p.ProdPriceWholesaleUnit = ProdPriceWholesaleUnit.Float64
+		p.ProdSellOnlyUnit = int(ProdSellOnlyUnit.Int32)
 		p.ProdPath = ProdPath.String
 		p.ProdCategId = int(ProdCategoryId.Int32)
 		p.ProdStock = int(ProdStock.Int32)
