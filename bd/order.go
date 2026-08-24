@@ -35,8 +35,8 @@ func InsertOrder(o models.Orders) (int64, error) {
 	}
 
 	for _, od := range o.OrderDetails {
-		sentencia = "INSERT INTO orders_detail (OD_OrderId, OD_ProdId, OD_Quantity, OD_Price) VALUES (" + strconv.Itoa(int(LastInsertId))
-		sentencia += ", " + strconv.Itoa(od.OD_ProdId) + ", " +strconv.Itoa(od.OD_Quantity) + ", " + strconv.FormatFloat(od.OD_Price, 'f', -1, 64) + ")"
+		sentencia = "INSERT INTO orders_detail (OD_OrderId, OD_ProdId, OD_Quantity, OD_Presentation, OD_Unit_Price, OD_Price) VALUES (" + strconv.Itoa(int(LastInsertId))
+		sentencia += ", " + strconv.Itoa(od.OD_ProdId) + ", " +strconv.Itoa(od.OD_Quantity) + ", "+ od.OD_Presentation + ", " + strconv.FormatFloat(od.OD_Unit_Price, 'f', -1, 64) + ", " + strconv.FormatFloat(od.OD_Price, 'f', -1, 64) + ")"
 
 		fmt.Println(sentencia)
 		_, err = Db.Exec(sentencia)
@@ -115,7 +115,7 @@ func SelectOrders(user string, fechaDesde string, fechaHasta string, page int, o
 		Order.Order_AddId = int(OrderAddId.Int32)
 
 		var rowsD *sql.Rows
-		sentenciaD := "SELECT OD_Id, OD_ProdId, OD_Quantity, OD_Price FROM orders_detail WHERE OD_OrderID = " + strconv.Itoa(Order.Order_Id)
+		sentenciaD := "SELECT OD_Id, OD_ProdId, OD_Quantity, OD_Presentation, OD_Unit_Price, OD_Price FROM orders_detail WHERE OD_OrderID = " + strconv.Itoa(Order.Order_Id)
 		rowsD, err = Db.Query(sentenciaD)
 		if err != nil {
 			return Orders, err
@@ -125,9 +125,11 @@ func SelectOrders(user string, fechaDesde string, fechaHasta string, page int, o
 			var OD_Id int64
 			var OD_ProdId int64
 			var OD_Quantity int64
+			var OD_Presentation string
+			var OD_Unit_Price float64
 			var OD_Price float64
 			
-			err = rowsD.Scan(&OD_Id, &OD_ProdId, &OD_Quantity, &OD_Price)
+			err = rowsD.Scan(&OD_Id, &OD_ProdId, &OD_Quantity, &OD_Presentation, &OD_Unit_Price, &OD_Price)
 
 			if err != nil {
 				return Orders, err
@@ -137,6 +139,8 @@ func SelectOrders(user string, fechaDesde string, fechaHasta string, page int, o
 			od.OD_Id = int(OD_Id)
 			od.OD_ProdId = int(OD_ProdId)
 			od.OD_Quantity = int(OD_Quantity)
+			od.OD_Presentation = OD_Presentation
+			od.OD_Unit_Price = OD_Unit_Price
 			od.OD_Price = OD_Price
 
 			Order.OrderDetails = append(Order.OrderDetails, od)

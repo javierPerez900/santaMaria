@@ -80,9 +80,11 @@ type Orders struct {
 }
 
 type OrdersDetails struct {
-	OD_Id       int     `json:"odId"`
-	OD_OrderId  int     `json:"odOrderId"`
-	OD_ProdId   int     `json:"odProdId"`
-	OD_Quantity int     `json:"odQuantity"`
-	OD_Price    float64 `json:"odPrice"`
+	OD_Id           int     `json:"odId"`
+	OD_OrderId      int     `json:"odOrderId"`
+	OD_ProdId       int     `json:"odProdId"`
+	OD_Quantity     int     `json:"odQuantity"`
+	OD_Presentation string  `json:"odPresentation"`
+	OD_Unit_Price   float64 `json:"odUnitPrice"`
+	OD_Price        float64 `json:"odPrice"`
 }
