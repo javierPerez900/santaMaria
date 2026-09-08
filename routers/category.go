@@ -2,6 +2,7 @@ package routers
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -35,7 +36,7 @@ func InsertCategory(body string, User string) (int, string) {
 		return 400, "Ocurrió un error al intentar realizar el registro de la categoría " + t.CategName + " > " + err2.Error()
 	}
 
-	return 200, "{ CategID: " + strconv.Itoa(int(result)) + "}"
+	return 200, fmt.Sprintf(`{"categID":%d}`, result)
 }
 
 func UpdateCategory(body string, User string, id int) (int, string){
@@ -43,7 +44,7 @@ func UpdateCategory(body string, User string, id int) (int, string){
 
 	err := json.Unmarshal([]byte(body), &t)
 	if err != nil {
-		return 400, "Error en los datos recibidos" + err.Error()
+		return 400, "Error en los datos recibidos " + err.Error()
 	} 
 
 	if len(t.CategName) == 0 && len(t.CategPath) == 0 {
@@ -76,7 +77,7 @@ func DeleteCategory(body string, User string, id int) (int, string) {
 
 	err := bd.DeleteCategory(id)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar	realizar el DELETE de la categoría " + strconv.Itoa(id) + " > " + err.Error()
+		return 400, "Ocurrió un error al intentar realizar el DELETE de la categoría " + strconv.Itoa(id) + " > " + err.Error()
 	}
 
 	return 200, "Delete OK"

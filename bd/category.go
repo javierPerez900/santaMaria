@@ -48,20 +48,15 @@ func UpdateCategory(c models.Category) error {
 	}
 	defer Db.Close()
 
-	sentencia := "UPDATE category SET"
-
-	if len(c.CategName)>0 {
-		sentencia += " Categ_Name = '" + tools.EscapeString(c.CategName) + "'"
+	sentencia := "UPDATE category SET "
+	partes := []string{}
+	if len(c.CategName) > 0 {
+			partes = append(partes, "Categ_Name = '"+tools.EscapeString(c.CategName)+"'")
 	}
-
-	if len(c.CategPath)>0 {
-		if !strings.HasSuffix(sentencia, "SET") {
-			sentencia += ", "
-		}
-		sentencia += "Categ_Path= '" + tools.EscapeString(c.CategPath) + "'"
+	if len(c.CategPath) > 0 {
+			partes = append(partes, "Categ_Path = '"+tools.EscapeString(c.CategPath)+"'")
 	}
-
-	sentencia += " WHERE Categ_Id = " + strconv.Itoa(c.CategID) 
+	sentencia += strings.Join(partes, ", ") + " WHERE Categ_Id = " + strconv.Itoa(c.CategID)
 
 	_, err = Db.Exec(sentencia)
 	if err != nil {
@@ -98,7 +93,7 @@ func DeleteCategory(id int) error {
 func SelectCategories(CategId int, Slug string) ([]models.Category, error) {
 	fmt.Println("Comienza SelectCategories")
 
-	var Categ []models.Category
+	Categ := []models.Category{}
 
 	err := DbConnect()
 	if err!=nil {
@@ -120,6 +115,10 @@ func SelectCategories(CategId int, Slug string) ([]models.Category, error) {
 
 	var rows *sql.Rows
 	rows, err = Db.Query(sentencia)
+	if err != nil {
+		return Categ, err
+	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var c models.Category
