@@ -115,7 +115,7 @@ func SelectOrders(user string, fechaDesde string, fechaHasta string, page int, o
 		Order.Order_AddId = int(OrderAddId.Int32)
 
 		var rowsD *sql.Rows
-		sentenciaD := "SELECT OD_Id, OD_ProdId, OD_Quantity, OD_Presentation, OD_Unit_Price, OD_Price FROM orders_detail WHERE OD_OrderID = " + strconv.Itoa(Order.Order_Id)
+		sentenciaD := "SELECT OD_Id, OD_ProdId, OD_Quantity, OD_Presentation, OD_Unit_Price, OD_Price FROM orders_detail WHERE OD_OrderId = " + strconv.Itoa(Order.Order_Id)
 		rowsD, err = Db.Query(sentenciaD)
 		if err != nil {
 			return Orders, err

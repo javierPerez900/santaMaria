@@ -31,7 +31,7 @@ type Product struct {
 	ProdUnitsPerBox        int     `json:"prodUnitsPerBox,omitempty"`
 	ProdWholesaleMinQty    int     `json:"prodWholesaleMinQty,omitempty"`
 	ProdPriceWholesaleUnit float64 `json:"prodPriceWholesaleUnit,omitempty"`
-	ProdSellOnlyUnit       int     `json:"prodSellOnlyUnit,omitempty"`
+	ProdSellOnlyUnit       int     `json:"prodSellOnlyUnit"`
 	ProdStock              int     `json:"prodStock"`
 	ProdCategId            int     `json:"prodCategId"`
 	ProdPath               string  `json:"prodPath"`

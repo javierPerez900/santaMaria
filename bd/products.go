@@ -140,7 +140,7 @@ func UpdateProduct(p models.Product) error {
 		sentencia = tools.ArmoSentencia(sentencia, "Prod_Price_Wholesale_Unit", "F", 0, priceWholesaleUnit, "")
 	}
 	
-	sentencia += " WHERE Prod_id = " + strconv.Itoa(p.ProdId)
+	sentencia += " WHERE Prod_Id = " + strconv.Itoa(p.ProdId)
 
 	_, err = Db.Exec(sentencia)
 	if err != nil {

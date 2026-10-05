@@ -63,6 +63,7 @@ func UserIsAdmin(userUUID string) (bool, string) {
 	if err != nil {
 		return false, err.Error()
 	}
+	defer rows.Close()
 
 	var valor string
 	rows.Next()
@@ -92,6 +93,7 @@ func UserExists(UserUUID string) (error, bool) {
 	if err != nil {
 		return err, false
 	}
+	defer rows.Close()
 
 	var valor string
 	rows.Next()
