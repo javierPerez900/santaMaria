@@ -22,29 +22,38 @@ func UpdateUser(body string, User string) (int, string) {
 		return 400, "Debe especificar el Nombre (FirstName) o (LastName) del usuario "
 	}
 
-	_, encontrado := bd.UserExists(User)
+	err, encontrado := bd.UserExists(User)
+	if err != nil {
+		fmt.Println("UserExists error: " + err.Error())
+		return 500, "Ocurrió un error al intentar buscar el usuario"
+	}
 	if !encontrado {
-		return 400, "No existe un usuario con ese UUID '" + User + "'"
+		return 404, "No existe un usuario con ese UUID '" + User + "'"
 	}
 
 	err = bd.UpdateUser(t, User)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar realizar la actualización del usuario " + User + " > " + err.Error()
+		fmt.Println("UpdateUser error: " + err.Error())
+		return 500, "Ocurrió un error al intentar actualizar el usuario"
 	}
 
 	return 200, "UpdateUser OK"
 }
 
 func SelectUser(body string, User string) (int, string) {
-	_, encontrado := bd.UserExists(User)
+	err, encontrado := bd.UserExists(User)
+	if err != nil {
+		fmt.Println("UserExists error: " + err.Error())
+		return 500, "Ocurrió un error al intentar buscar el usuario"
+	}
 	if !encontrado {
-		return 400, "No existe un usuario con ese UUID '" + User + "'"
+		return 404, "No existe un usuario con ese UUID '" + User + "'"
 	}
 
 	row, err := bd.SelectUser(User)
-	fmt.Println(row)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar realizar el Select del usuario " + User + " > " + err.Error()
+		fmt.Println("SelectUser error: " + err.Error())
+		return 500, "Ocurrió un error al intentar obtener los datos del usuario"
 	}
 
 	respJson, err := json.Marshal(row)
@@ -55,22 +64,25 @@ func SelectUser(body string, User string) (int, string) {
 }
 
 func SelectUsers(body string, User string, request events.APIGatewayV2HTTPRequest) (int, string) {
-	var Page int
-
-	if len(request.QueryStringParameters["page"]) == 0 {
-		Page = 1
-	} else {
-		Page, _ = strconv.Atoi(request.QueryStringParameters["page"])
-	}
-
 	isAdmin, msg := bd.UserIsAdmin(User)
 	if !isAdmin {
-		return 400, msg
+		fmt.Println("UserIsAdmin: " + msg)
+		return 403, "No tiene permisos para realizar esta acción"
+	}
+
+	Page := 1
+	if p := request.QueryStringParameters["page"]; len(p) > 0 {
+		n, err := strconv.Atoi(p)
+		if err != nil || n < 1 {
+			return 400, "El valor de page debe ser un número entero mayor a 0"
+		}
+		Page = n
 	}
 
 	user, err := bd.SelectUsers(Page)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar obtener la lista de usuarios > " + err.Error()
+		fmt.Println("SelectUsers error: " + err.Error())
+		return 500, "Ocurrió un error al intentar obtener la lista de usuarios"
 	}
 
 	respJson, err := json.Marshal(user)

@@ -4,12 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"strconv"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/javier/santaMaria/models"
-	"github.com/javier/santaMaria/tools"
 )
 
 func InsertCategory(c models.Category) (int64, error) {
@@ -21,10 +19,7 @@ func InsertCategory(c models.Category) (int64, error) {
 	}
 	defer Db.Close()
 
-	sentencia := "INSERT INTO category (Categ_Name, Categ_Path) VALUES ('"+ c.CategName + "', '" + c.CategPath + "')"
-
-	var result sql.Result
-	result, err = Db.Exec(sentencia)
+	result, err := Db.Exec("INSERT INTO category (Categ_Name, Categ_Path) VALUES (?, ?)", c.CategName, c.CategPath)
 	if err != nil {
 		fmt.Println(err.Error())
 		return 0, err
@@ -42,23 +37,32 @@ func InsertCategory(c models.Category) (int64, error) {
 func UpdateCategory(c models.Category) error {
 	fmt.Println("Comienza Registro de UpdateCategory")
 
+	partes := []string{}
+	args := []any{}
+
+	if len(c.CategName) > 0 {
+		partes = append(partes, "Categ_Name = ?")
+		args = append(args, c.CategName)
+	}
+	if len(c.CategPath) > 0 {
+		partes = append(partes, "Categ_Path = ?")
+		args = append(args, c.CategPath)
+	}
+
+	if len(partes) == 0 {
+		return fmt.Errorf("no hay campos para actualizar")
+	}
+
 	err := DbConnect()
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	defer Db.Close()
 
-	sentencia := "UPDATE category SET "
-	partes := []string{}
-	if len(c.CategName) > 0 {
-			partes = append(partes, "Categ_Name = '"+tools.EscapeString(c.CategName)+"'")
-	}
-	if len(c.CategPath) > 0 {
-			partes = append(partes, "Categ_Path = '"+tools.EscapeString(c.CategPath)+"'")
-	}
-	sentencia += strings.Join(partes, ", ") + " WHERE Categ_Id = " + strconv.Itoa(c.CategID)
+	sentencia := "UPDATE category SET " + strings.Join(partes, ", ") + " WHERE Categ_Id = ?"
+	args = append(args, c.CategID)
 
-	_, err = Db.Exec(sentencia)
+	_, err = Db.Exec(sentencia, args...)
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
@@ -72,20 +76,17 @@ func DeleteCategory(id int) error {
 	fmt.Println("Comienza Registro de DeleteCategory")
 
 	err := DbConnect()
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	defer Db.Close()
 
-	sentencia := "DELETE FROM category WHERE Categ_Id = " + strconv.Itoa(id)
-
-	_, err = Db.Exec(sentencia)
+	_, err = Db.Exec("DELETE FROM category WHERE Categ_Id = ?", id)
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
 	}
 
-	fmt.Println(sentencia)
 	fmt.Println("Delete Category > Ejecución Exitosa")
 	return nil
 }
@@ -96,25 +97,23 @@ func SelectCategories(CategId int, Slug string) ([]models.Category, error) {
 	Categ := []models.Category{}
 
 	err := DbConnect()
-	if err!=nil {
+	if err != nil {
 		return Categ, err
 	}
 	defer Db.Close()
 
 	sentencia := "SELECT Categ_Id, Categ_Name, Categ_Path FROM category"
+	args := []any{}
 
 	if CategId > 0 {
-		sentencia += " WHERE Categ_Id = " + strconv.Itoa(CategId)
-	} else {
-		if len(Slug) > 0 {
-			sentencia += " WHERE Categ_Path LIKE '%" + Slug + "%'"
-		}
+		sentencia += " WHERE Categ_Id = ?"
+		args = append(args, CategId)
+	} else if len(Slug) > 0 {
+		sentencia += " WHERE Categ_Path LIKE ?"
+		args = append(args, "%"+Slug+"%")
 	}
 
-	fmt.Println(sentencia)
-
-	var rows *sql.Rows
-	rows, err = Db.Query(sentencia)
+	rows, err := Db.Query(sentencia, args...)
 	if err != nil {
 		return Categ, err
 	}
@@ -125,7 +124,7 @@ func SelectCategories(CategId int, Slug string) ([]models.Category, error) {
 		var categId sql.NullInt32
 		var categName sql.NullString
 		var categPath sql.NullString
-	
+
 		err := rows.Scan(&categId, &categName, &categPath)
 		if err != nil {
 			return Categ, err
@@ -136,6 +135,10 @@ func SelectCategories(CategId int, Slug string) ([]models.Category, error) {
 		c.CategPath = categPath.String
 
 		Categ = append(Categ, c)
+	}
+
+	if err := rows.Err(); err != nil {
+		return Categ, err
 	}
 
 	fmt.Println("Select Category > Ejecución Exitosa")

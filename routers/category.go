@@ -28,12 +28,14 @@ func InsertCategory(body string, User string) (int, string) {
 
 	isAdmin, msg := bd.UserIsAdmin(User)
 	if !isAdmin {
-		return 400, msg
+		fmt.Println("UserIsAdmin: " + msg)
+		return 403, "No tiene permisos para realizar esta acción"
 	}
 
 	result, err2 := bd.InsertCategory(t)
 	if err2 != nil {
-		return 400, "Ocurrió un error al intentar realizar el registro de la categoría " + t.CategName + " > " + err2.Error()
+		fmt.Println("InsertCategory error: " + err2.Error())
+		return 500, "Ocurrió un error al intentar registrar la categoría"
 	}
 
 	return 200, fmt.Sprintf(`{"categID":%d}`, result)
@@ -53,13 +55,15 @@ func UpdateCategory(body string, User string, id int) (int, string){
 
 	isAdmin, msg := bd.UserIsAdmin(User)
 	if !isAdmin {
-		return 400, msg
+		fmt.Println("UserIsAdmin: " + msg)
+		return 403, "No tiene permisos para realizar esta acción"
 	}
 
 	t.CategID=id
 	err2 := bd.UpdateCategory(t)
 	if err2 != nil {
-		return 400, "Ocurrió un error al intentar realizar el UPDATE de la categoría " + strconv.Itoa(id) + " > " + err2.Error()
+		fmt.Println("UpdateCategory error: " + err2.Error())
+		return 500, "Ocurrió un error al intentar actualizar la categoría"
 	}
 
 	return 200, "Update OK"
@@ -72,12 +76,14 @@ func DeleteCategory(body string, User string, id int) (int, string) {
 
 	isAdmin, msg := bd.UserIsAdmin(User)
 	if !isAdmin {
-		return 400, msg
+		fmt.Println("UserIsAdmin: " + msg)
+		return 403, "No tiene permisos para realizar esta acción"
 	}
 
 	err := bd.DeleteCategory(id)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar realizar el DELETE de la categoría " + strconv.Itoa(id) + " > " + err.Error()
+		fmt.Println("DeleteCategory error: " + err.Error())
+		return 500, "Ocurrió un error al intentar borrar la categoría"
 	}
 
 	return 200, "Delete OK"
@@ -91,7 +97,7 @@ func SelectCategories(body string, request events.APIGatewayV2HTTPRequest) (int,
 	if len(request.QueryStringParameters["categId"]) > 0 {
 		CategId, err = strconv.Atoi(request.QueryStringParameters["categId"])
 		if err != nil {
-			return 500, "Ocurrió un error al intentar convertir en entero el valor " + request.QueryStringParameters["categId"]
+			return 400, "El valor de categId debe ser un número entero"
 		}
 	} else {
 		if len(request.QueryStringParameters["slug"]) > 0 {
@@ -101,12 +107,13 @@ func SelectCategories(body string, request events.APIGatewayV2HTTPRequest) (int,
 
 	lista, err2 := bd.SelectCategories(CategId, Slug)
 	if err2 != nil {
-		return 400, "Ocurrió un error al intentar capturar Categoría/s > " + err2.Error()
+		fmt.Println("SelectCategories error: " + err2.Error())
+		return 500, "Ocurrió un error al intentar obtener las categorías"
 	}
 
 	Categ, err3 := json.Marshal(lista)
 	if err3 != nil {
-		return 400, "Ocurrió un error al intentar convertir en JSON Categoría/s > " + err3.Error()
+		return 500, "Ocurrió un error al convertir las categorías a JSON"
 	}
 	
 	return 200, string(Categ)

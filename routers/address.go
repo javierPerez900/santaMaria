@@ -2,6 +2,7 @@ package routers
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/javier/santaMaria/bd"
 	"github.com/javier/santaMaria/models"
@@ -39,7 +40,8 @@ func InsertAddress(body string, User string) (int, string) {
 
 	err = bd.InsertAddress(t, User)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar realizar el registro del Address para el ID de Usuario " + User + " > " + err.Error()
+		fmt.Println("InsertAddress error: " + err.Error())
+		return 500, "Ocurrió un error al intentar registrar la dirección"
 	}
 
 	return 200, "InsertAddress OK"
@@ -53,19 +55,25 @@ func UpdateAddress(body string, User string, id int) (int, string){
 		return 400, "Error en los datos recibidos" + err.Error()
 	} 
 
-	t.AddId = id
-	var encontrado bool
-	err, encontrado = bd.AddressExists(User, t.AddId)
-	if !encontrado { 
-		if err != nil {
-			return 400, "Ocurrió un error al intentar buscar Address para el usuario " + User + " > " + err.Error()
-		}
-		return 400, "No se encuentra un registro de ID de Usuario asociado a esa ID de Address"
+	if t.AddAddress == "" && t.AddCity == "" && t.AddName == "" && t.AddPhone == "" &&
+		t.AddPostalCode == "" && t.AddState == "" && t.AddTitle == "" {
+		return 400, "Debe especificar al menos un campo para actualizar"
 	}
 
-	err = bd.UpdateAddress(t)
+	t.AddId = id
+	err, encontrado := bd.AddressExists(User, t.AddId)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar realizar la actualización del Address para el ID de Usuario " + User + " > " + err.Error()
+		fmt.Println("AddressExists error: " + err.Error())
+		return 500, "Ocurrió un error al intentar buscar la dirección"
+	}
+	if !encontrado {
+		return 404, "No se encuentra una dirección con ese ID para este usuario"
+	}
+
+	err = bd.UpdateAddress(t, User)
+	if err != nil {
+		fmt.Println("UpdateAddress error: " + err.Error())
+		return 500, "Ocurrió un error al intentar actualizar la dirección"
 	}
 
 	return 200, "UpdateAddress OK"
@@ -74,16 +82,18 @@ func UpdateAddress(body string, User string, id int) (int, string){
 func DeleteAddress(User string, id int) (int, string){
 
 	err, encontrado := bd.AddressExists(User, id)
-	if !encontrado { 
-		if err != nil {
-			return 400, "Ocurrió un error al intentar buscar Address para el usuario " + User + " > " + err.Error()
-		}
-		return 400, "No se encuentra un registro de ID de Usuario asociado a esa ID de Address"
+	if err != nil {
+		fmt.Println("AddressExists error: " + err.Error())
+		return 500, "Ocurrió un error al intentar buscar la dirección"
+	}
+	if !encontrado {
+		return 404, "No se encuentra una dirección con ese ID para este usuario"
 	}
 
-	err = bd.DeleteAddress(id)
+	err = bd.DeleteAddress(id, User)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar borrar una dirección del usuario '" + User + "' > " + err.Error()
+		fmt.Println("DeleteAddress error: " + err.Error())
+		return 500, "Ocurrió un error al intentar borrar la dirección"
 	}
 
 	return 200, "DeleteAddress OK"
@@ -92,13 +102,14 @@ func DeleteAddress(User string, id int) (int, string){
 func SelectAddress(User string) (int, string) {
 	addr, err := bd.SelectAddress(User)
 	if err != nil {
-		return 400, "Ocurrió un error al intentar obtener la lista de direcciones del usuario " + User + " > " + err.Error()
+		fmt.Println("SelectAddress error: " + err.Error())
+		return 500, "Ocurrió un error al intentar obtener las direcciones"
 	}
 
 	respJson, err := json.Marshal(addr)
 	if err != nil {
-		return 400, "Ocurrió un error al formatear los datos de las Addresses como JSON"
+		return 500, "Ocurrió un error al formatear las direcciones como JSON"
 	}
-	
+
 	return 200, string(respJson)
 }

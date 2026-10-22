@@ -29,6 +29,7 @@ func DbConnect() error {
 	err = Db.Ping()
 	if err != nil {
 		fmt.Println( err.Error())
+		Db.Close()
 		return err
 	}
 
@@ -42,9 +43,7 @@ func ConnStr(claves models.SecretRDSJson) string {
 	authToken = claves.Password
 	dbEndPoint = claves.Host
 	dbName = "santa_maria"
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?allowCleartextPasswords=true&parseTime=true", dbUser, authToken, dbEndPoint, dbName)
-	fmt.Println(dsn)
-	return dsn
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s?allowCleartextPasswords=true&parseTime=true", dbUser, authToken, dbEndPoint, dbName)
 }
 
 func UserIsAdmin(userUUID string) (bool, string) {
@@ -56,25 +55,37 @@ func UserIsAdmin(userUUID string) (bool, string) {
 	}
 	defer Db.Close()
 
-	sentencia := "SELECT 1 FROM users WHERE User_UUID='"+ userUUID + "' AND User_Status = 0"
-	fmt.Println(sentencia)
-
-	rows, err := Db.Query(sentencia)
+	var valor int
+	err = Db.QueryRow("SELECT 1 FROM users WHERE User_UUID = ? AND User_Status = 0", userUUID).Scan(&valor)
+	if err == sql.ErrNoRows {
+		return false, "User is not admin"
+	}
 	if err != nil {
 		return false, err.Error()
 	}
-	defer rows.Close()
 
-	var valor string
-	rows.Next()
-	rows.Scan(&valor)
+	fmt.Println("UserIsAdmin > Ejecución exitosa")
+	return true, ""
 
-	fmt.Println("UserIsAdmin > Ejecución exitosa - valor devuelto " + valor)
-	if valor == "1" {
-		return true, ""
-	}
+	// sentencia := "SELECT 1 FROM users WHERE User_UUID='"+ userUUID + "' AND User_Status = 0"
+	// fmt.Println(sentencia)
 
-	return false, "User is not admin"
+	// rows, err := Db.Query(sentencia)
+	// if err != nil {
+	// 	return false, err.Error()
+	// }
+	// defer rows.Close()
+
+	// var valor string
+	// rows.Next()
+	// rows.Scan(&valor)
+
+	// fmt.Println("UserIsAdmin > Ejecución exitosa - valor devuelto " + valor)
+	// if valor == "1" {
+	// 	return true, ""
+	// }
+
+	// return false, "User is not admin"
 }
 
 func UserExists(UserUUID string) (error, bool) {
@@ -86,24 +97,36 @@ func UserExists(UserUUID string) (error, bool) {
 	}
 	defer Db.Close()
 
-	sentencia := "SELECT 1 FROM users WHERE User_UUID='"+ UserUUID + "'"
-	fmt.Println(sentencia)
-
-	rows, err := Db.Query(sentencia)
+	var valor int
+	err = Db.QueryRow("SELECT 1 FROM users WHERE User_UUID = ?", UserUUID).Scan(&valor)
+	if err == sql.ErrNoRows {
+		return nil, false
+	}
 	if err != nil {
 		return err, false
 	}
-	defer rows.Close()
 
-	var valor string
-	rows.Next()
-	rows.Scan(&valor)
+	fmt.Println("UserExists > Ejecución exitosa")
+	return nil, true
 
-	fmt.Println("UserExists > Ejecución exitosa - valor devuelto " + valor)
+	// sentencia := "SELECT 1 FROM users WHERE User_UUID='"+ UserUUID + "'"
+	// fmt.Println(sentencia)
 
-	if valor == "1" {
-		return nil, true
-	}
+	// rows, err := Db.Query(sentencia)
+	// if err != nil {
+	// 	return err, false
+	// }
+	// defer rows.Close()
 
-	return nil, false
+	// var valor string
+	// rows.Next()
+	// rows.Scan(&valor)
+
+	// fmt.Println("UserExists > Ejecución exitosa - valor devuelto " + valor)
+
+	// if valor == "1" {
+	// 	return nil, true
+	// }
+
+	// return nil, false
 }

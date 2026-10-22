@@ -3,7 +3,7 @@ package bd
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/javier/santaMaria/models"
@@ -13,27 +13,36 @@ import (
 func UpdateUser(UField models.User, User string) error {
 	fmt.Println("Comienza UpdateUser")
 
+	partes := []string{}
+	args := []any{}
+
+	// Los nombres de columna son texto fijo; solo los valores van como parámetros
+	if len(UField.UserFirstName) > 0 {
+		partes = append(partes, "User_FirstName = ?")
+		args = append(args, UField.UserFirstName)
+	}
+	if len(UField.UserLastName) > 0 {
+		partes = append(partes, "User_LastName = ?")
+		args = append(args, UField.UserLastName)
+	}
+
+	if len(partes) == 0 {
+		return fmt.Errorf("no hay campos para actualizar")
+	}
+
+	partes = append(partes, "User_DateUpg = ?")
+	args = append(args, tools.FechaMySQL())
+
 	err := DbConnect()
 	if err != nil {
 		return err
 	}
 	defer Db.Close()
 
-	sentencia := "UPDATE users SET "
+	sentencia := "UPDATE users SET " + strings.Join(partes, ", ") + " WHERE User_UUID = ?"
+	args = append(args, User)
 
-	coma := ""
-	if len(UField.UserFirstName) > 0 {
-		coma = ","
-		sentencia += "User_FirstName = '" + UField.UserFirstName + "'"
-	}
-	
-	if len(UField.UserLastName) > 0 {
-		sentencia += coma + "User_LastName = '" + UField.UserLastName + "'"
-	}
-
-	sentencia += ", User_DateUpg = '" + tools.FechaMySQL() + "' WHERE User_UUID='" + User + "'"
-
-	_, err = Db.Exec(sentencia)
+	_, err = Db.Exec(sentencia, args...)
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
@@ -53,24 +62,17 @@ func SelectUser(UserId string) (models.User, error) {
 	}
 	defer Db.Close()
 
-	sentencia := "SELECT * FROM users WHERE User_UUID = '" + UserId + "'"
-
-	var rows *sql.Rows
-	rows, err = Db.Query(sentencia)
-	
-	if err != nil {
-		fmt.Println(err.Error())
-		return User, err
-	}
-	defer rows.Close()
-
-	rows.Next()
-
 	var firstName sql.NullString
 	var lastName sql.NullString
 	var dateUpg sql.NullTime
 
-	rows.Scan(&User.UserUUID, &User.UserEmail, &firstName, &lastName, &User.UserStatus, &User.UserDateAdd, &dateUpg)
+	err = Db.QueryRow("SELECT * FROM users WHERE User_UUID = ?", UserId).Scan(
+		&User.UserUUID, &User.UserEmail, &firstName, &lastName, &User.UserStatus, &User.UserDateAdd, &dateUpg,
+	)
+	if err != nil {
+		fmt.Println(err.Error())
+		return User, err
+	}
 
 	User.UserFirstName = firstName.String
 	User.UserLastName = lastName.String
@@ -92,36 +94,24 @@ func SelectUsers(Page int) (models.ListUsers, error) {
 	}
 	defer Db.Close()
 
-	var offset int = (Page * 10) - 10
-	var sentencia string
-	var sentenciaCount string = "SELECT count(*) as registros FROM users"
-
-	sentencia = "SELECT * FROM users LIMIT 10"
-	if offset > 0 {
-		sentencia += " OFFSET " + strconv.Itoa(offset)
+	if Page < 1 {
+		Page = 1
 	}
+	offset := (Page - 1) * 10
 
-	var rowsCount *sql.Rows
-
-	rowsCount, err = Db.Query(sentenciaCount)
+	var registros int
+	err = Db.QueryRow("SELECT count(*) FROM users").Scan(&registros)
 	if err != nil {
 		return lu, err
 	}
-
-	defer rowsCount.Close()
-
-	rowsCount.Next()
-
-	var registros int
-	rowsCount.Scan(&registros)
 	lu.TotalItems = registros
 
-	var rows *sql.Rows
-	rows, err = Db.Query(sentencia)
+	rows, err := Db.Query("SELECT * FROM users LIMIT ? OFFSET ?", 10, offset)
 	if err != nil {
 		fmt.Println(err.Error())
 		return lu, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var u models.User
@@ -129,12 +119,19 @@ func SelectUsers(Page int) (models.ListUsers, error) {
 		var lastName sql.NullString
 		var dateUpg sql.NullTime
 
-		rows.Scan(&u.UserUUID, &u.UserEmail, &firstName, &lastName, &u.UserStatus, &u.UserDateAdd, &dateUpg)
+		err := rows.Scan(&u.UserUUID, &u.UserEmail, &firstName, &lastName, &u.UserStatus, &u.UserDateAdd, &dateUpg)
+		if err != nil {
+			return lu, err
+		}
 
 		u.UserFirstName = firstName.String
 		u.UserLastName = lastName.String
 		u.UserDateUpd = dateUpg.Time.String()
 		User = append(User, u)
+	}
+
+	if err := rows.Err(); err != nil {
+		return lu, err
 	}
 
 	fmt.Println("Select Users > Ejecución Exitosa")
